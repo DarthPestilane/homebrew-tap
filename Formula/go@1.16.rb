@@ -1,41 +1,32 @@
 class GoAT116 < Formula
-  desc "Open source programming language to build simple/reliable/efficient software"
+  desc "Go programming environment (1.16)"
   homepage "https://golang.org"
-  url "https://golang.org/dl/go1.16.6.src.tar.gz"
-  mirror "https://fossies.org/linux/misc/go1.16.6.src.tar.gz"
-  sha256 "a3a5d4bc401b51db065e4f93b523347a4d343ae0c0b08a65c3423b05a138037d"
+  url "https://golang.org/dl/go1.16.15.src.tar.gz"
+  mirror "https://fossies.org/linux/misc/go1.16.15.src.tar.gz"
+  sha256 "90a08c689279e35f3865ba510998c33a63255c36089b3ec206c912fc0568c3d3"
   license "BSD-3-Clause"
-  head "https://go.googlesource.com/go.git"
 
-  livecheck do
-    url "https://golang.org/dl/"
-    regex(/href=.*?go[._-]?v?(\d+(?:\.\d+)+)[._-]src\.t/i)
+  bottle do
+    sha256 cellar: :any_skip_relocation, arm64_ventura:  "0445f27149b6062b87a2fc8493e09424adb4fe827765133e4f6c9e7ee79c1191"
+    sha256 cellar: :any_skip_relocation, arm64_monterey: "d0500786661f7cddfc20403a9daa9af648404e0564363783fb7d9fc44e884fe3"
+    sha256 cellar: :any_skip_relocation, arm64_big_sur:  "5dcd84f44f1231cf1d32cbe6ca5d5f158de11efe7ea24b1ae24b4ede68cc6361"
+    sha256 cellar: :any_skip_relocation, ventura:        "bed01a501ab3c9555073127eb7b498a0415b53e17629d7804de5ffc8dacecc1d"
+    sha256 cellar: :any_skip_relocation, monterey:       "b57fe6d2c36ea1529189bd3b7c9687a17c5b66660843f8f8db80b3a437693743"
+    sha256 cellar: :any_skip_relocation, big_sur:        "2ba14df4f397d33f51bc22b9da40f07836990e6eb2e876aba96f3da82e12babe"
+    sha256 cellar: :any_skip_relocation, catalina:       "80d62cf6ed5b2fedfd714b1f02e7bb660a23d6f061f7ecdfdbbdf0257072401f"
+    sha256 cellar: :any_skip_relocation, x86_64_linux:   "aaee729abff3f20350c5af642bea0e39257fe077dde752873f8539fbfed874d9"
   end
 
-  # Don't update this unless this version cannot bootstrap the new version.
-  resource "gobootstrap" do
-    on_macos do
-      if Hardware::CPU.arm?
-        url "https://storage.googleapis.com/golang/go1.16.darwin-arm64.tar.gz"
-        version "1.16"
-        sha256 "4dac57c00168d30bbd02d95131d5de9ca88e04f2c5a29a404576f30ae9b54810"
-      else
-        url "https://storage.googleapis.com/golang/go1.16.darwin-amd64.tar.gz"
-        version "1.16"
-        sha256 "6000a9522975d116bf76044967d7e69e04e982e9625330d9a539a8b45395f9a8"
-      end
-    end
+  keg_only :versioned_formula
 
-    on_linux do
-      url "https://storage.googleapis.com/golang/go1.16.linux-amd64.tar.gz"
-      version "1.16"
-      sha256 "013a489ebb3e24ef3d915abe5b94c3286c070dfe0818d5bca8108f1d6e8440d2"
-    end
-  end
+  # Original date: 2022-03-15
+  # The date below was adjusted to match `kubernetes-cli@1.22`.
+  disable! date: "2023-08-29", because: :unsupported
+
+  depends_on "go" => :build
 
   def install
-    (buildpath/"gobootstrap").install resource("gobootstrap")
-    ENV["GOROOT_BOOTSTRAP"] = buildpath/"gobootstrap"
+    ENV["GOROOT_BOOTSTRAP"] = Formula["go"].opt_libexec
 
     cd "src" do
       ENV["GOROOT_FINAL"] = libexec
@@ -43,7 +34,6 @@ class GoAT116 < Formula
     end
 
     (buildpath/"pkg/obj").rmtree
-    rm_rf "gobootstrap" # Bootstrap not required beyond compile.
     libexec.install Dir["*"]
     bin.install_symlink Dir[libexec/"bin/go*"]
 
@@ -63,7 +53,7 @@ class GoAT116 < Formula
       import "fmt"
 
       func main() {
-          fmt.Println("Hello World")
+        fmt.Println("Hello World")
       }
     EOS
     # Run go fmt check for no errors then run the program.
@@ -72,7 +62,7 @@ class GoAT116 < Formula
     assert_equal "Hello World\n", shell_output("#{bin}/go run hello.go")
 
     ENV["GOOS"] = "freebsd"
-    ENV["GOARCH"] = "amd64"
+    ENV["GOARCH"] = Hardware::CPU.intel? ? "amd64" : Hardware::CPU.arch.to_s
     system bin/"go", "build", "hello.go"
   end
 end
