@@ -6,6 +6,8 @@ class GoAT119 < Formula
   sha256 "ccf36b53fb0024a017353c3ddb22c1f00bc7a8073c6aac79042da24ee34434d3"
   license "BSD-3-Clause"
 
+  no_autobump! because: :requires_manual_review
+
   bottle do
     sha256 cellar: :any_skip_relocation, arm64_sonoma:   "32c7123bcc814d8ed1f54c072ab06e4128f82378feee8a3fa78e8475ceb5b55a"
     sha256 cellar: :any_skip_relocation, arm64_ventura:  "cf10aa203445ad09fcb6e97e91ee75cb41215b3d9b84e1c25e6e24ba45454dbc"
@@ -22,7 +24,7 @@ class GoAT119 < Formula
 
   # EOL with Go 1.21 release (2023-08-08)
   # Ref: https://go.dev/doc/devel/release#policy
-  deprecate! date: "2023-08-13", because: :unsupported
+  disable! date: "2024-08-24", because: :unsupported
 
   depends_on "go" => :build
 
@@ -34,7 +36,7 @@ class GoAT119 < Formula
       system "./make.bash", "--no-clean"
     end
 
-    (buildpath/"pkg/obj").rmtree
+    rm_r(buildpath/"pkg/obj")
     libexec.install Dir["*"]
     bin.install_symlink Dir[libexec/"bin/go*"]
 
@@ -42,13 +44,13 @@ class GoAT119 < Formula
 
     # Remove useless files.
     # Breaks patchelf because folder contains weird debug/test files
-    (libexec/"src/debug/elf/testdata").rmtree
+    rm_r(libexec/"src/debug/elf/testdata")
     # Binaries built for an incompatible architecture
-    (libexec/"src/runtime/pprof/testdata").rmtree
+    rm_r(libexec/"src/runtime/pprof/testdata")
   end
 
   test do
-    (testpath/"hello.go").write <<~EOS
+    (testpath/"hello.go").write <<~GO
       package main
 
       import "fmt"
@@ -56,7 +58,7 @@ class GoAT119 < Formula
       func main() {
           fmt.Println("Hello World")
       }
-    EOS
+    GO
     # Run go fmt check for no errors then run the program.
     # This is a a bare minimum of go working as it uses fmt, build, and run.
     system bin/"go", "fmt", "hello.go"
